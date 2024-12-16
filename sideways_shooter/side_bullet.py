@@ -13,7 +13,7 @@ class Bullet(Sprite):
         self.color = self.settings.bullet_color
         self.image = pygame.image.load('images/bullet.png')
 
-        # Create a bullet rect at (0, 0) and then set correct position.
+        # Create two bullets rect at (0, 0) and then set correct position.
         self.rect = pygame.Rect(0, 0, self.settings.bullet_width,
                                 self.settings.bullet_height)
         
@@ -26,9 +26,11 @@ class Bullet(Sprite):
 
     def update(self):
         """Move the bullet from left to right side."""
-        # Update the exact position of the bullet.
+        # Update the exact position of the bullets.
         self.x += self.settings.bullet_speed
         self.rect.x = self.x
+
+        # Remove bullets if are off the screen.
         if self.rect.left > self.screen.get_rect().right:
             self.kill()
 
