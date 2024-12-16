@@ -1,4 +1,4 @@
-# Side Shooter Game
+# Sideways Shooter Game
 
 A simple 2D shooting game where a jet fires bullets to defeat enemies. Built using Pygame for educational purposes.
 
