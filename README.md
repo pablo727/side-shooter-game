@@ -6,7 +6,7 @@ A simple 2D shooting game where a jet fires bullets to defeat enemies. Built usi
 - 2D side-scrolling gameplay
 - Jet with two cannons to shoot bullets
 - Simple controls (up, down, space to shoot)
-- Enemies and bullet collision detection (coming soon!)
+- Bullet collision detection (coming soon!)
 
 ## Installation 
 
@@ -34,3 +34,4 @@ This project is licensed under the [MIT License](LICENSE) - see the License file
 ## Acknowledgments
 - Ship image by [clayster2012](https://opengameart.org/users/clayster2012)
 - Bullet image by [upklyak / Freepik](http://www.freepik.com)
+- Alien image by [Carlos Alface](http://carlosalface.blogspot.pt/)
