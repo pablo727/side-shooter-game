@@ -3,6 +3,7 @@ import sys
 from side_settings import Settings
 from ss_ship import Jet
 from side_bullet import Bullet
+from alien import Alien
 
 class SideShooter():
     """Overall class to manage game assets and behavior."""
@@ -23,6 +24,10 @@ class SideShooter():
 
         # Create a group for bullets.
         self.bullets = pygame.sprite.Group()
+
+        # Create a group of aliens.
+        self.aliens = pygame.sprite.Group()
+        self._create_fleet()
 
     def run_game(self):
         """Start the main loop for the game."""
@@ -78,6 +83,36 @@ class SideShooter():
         for bullet in self.bullets.copy():
             if bullet.rect.right < 0:
                 self.bullets.remove(bullet)
+    
+    def _create_fleet(self):
+        """Create the fleet of aliens."""
+        # Create the fleet of aliens.
+        # Create an alien and keep adding aliens until there's no room left.
+        # Spacing between aliens is one alien height.
+        alien = Alien(self)
+        alien_width = alien.rect.width
+        alien_height = alien.rect.height
+
+        # Set the starting x position.
+        # Near the right side, leaving space.
+        start_x = (self.settings.screen_width - 2 * alien_width)
+        current_x = start_x
+
+        # Set the starting y position.
+        current_y = alien_height
+        while current_y < (self.settings.screen_height - 2 * alien_height):
+            new_alien = Alien(self)
+            new_alien.rect.x = current_x
+            new_alien.rect.y = current_y
+            self.aliens.add(new_alien)
+
+            # Move down to the next row of aliens.
+            current_y += alien_height
+        
+        # If you reach the bottom of the screen, start new column from right.
+        if current_y > self.settings.screen_height:
+            current_y = alien_height  # Reset y to the top
+            current_x -= alien_width  # Move left for the next column.
 
     def _update_screen(self):
         """Update images on the screen, and flip to new screen."""
@@ -87,6 +122,9 @@ class SideShooter():
 
         # Draw the bullets.
         self.bullets.draw(self.screen)
+
+        # Draw the aliens.
+        self.aliens.draw(self.screen)
 
         pygame.display.flip()
 
