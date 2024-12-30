@@ -27,14 +27,24 @@ class SideShooter():
 
         # Create a group of aliens.
         self.aliens = pygame.sprite.Group()
-        self._create_fleet()
 
+        # Set the fleet direction before creating the fleet.
+        self.fleet_direction = -1 # 1 for right, -1 for left.
+        
+        # Adjust for the speed of the aliens.
+        self.settings.alien_speed
+
+        # Create fleet.
+        self._create_fleet()
+        
     def run_game(self):
         """Start the main loop for the game."""
         while True:
             self._check_events()  # Check for events like key presses.
             self.ship.update()  # Update position of the ship.
             self._update_bullets()  # Update the bullets.
+            self._split_fleet()  # Check and split the fleet when close to ship
+            self._update_aliens()  # Update the position of aliens.
             self._update_screen()  # Redraw the screen.
             self.clock.tick(60)  # Limit frame rate to 60 FPS.
     
@@ -86,33 +96,112 @@ class SideShooter():
     
     def _create_fleet(self):
         """Create the fleet of aliens."""
-        # Create the fleet of aliens.
-        # Create an alien and keep adding aliens until there's no room left.
-        # Spacing between aliens is one alien height.
-        alien = Alien(self)
-        alien_width = alien.rect.width
-        alien_height = alien.rect.height
+        alien = Alien(self, self.fleet_direction)
+        alien_width, alien_height = alien.rect.size
 
-        # Set the starting x position.
-        # Near the right side, leaving space.
-        start_x = (self.settings.screen_width - 2 * alien_width)
-        current_x = start_x
+        # Add padding values.
+        top_padding = 20  # Padding from the top.
+        bottom_padding = 150  # Padding from the bottom.
+        right_padding = 20  # Padding from the right.
 
-        # Set the starting y position.
-        current_y = alien_height
-        while current_y < (self.settings.screen_height - 2 * alien_height):
-            new_alien = Alien(self)
-            new_alien.rect.x = current_x
-            new_alien.rect.y = current_y
-            self.aliens.add(new_alien)
+        # Set a fixed amount of space between aliens.
+        horizontal_spacing = alien_width * 1.2 # Larger than alien width.
+        vertical_spacing = alien_height * 1.8  # Larger than alien height.
 
-            # Move down to the next row of aliens.
-            current_y += alien_height
+        # Starting positions with padding.
+        current_x, current_y = alien_width, alien_height + top_padding
+        current_x += 4.3 * alien_width  # Start first row bit further from left
+
+        # Adjust to avoid right edge
+        while current_x + alien_width <= (self.settings.screen_width 
+                                          - right_padding):  # Avoid right edge
+            current_y = vertical_spacing + top_padding  # Reset y position.
+
+            # Split fleet in two halves: Top and Bottom.
+            while current_y + alien_height <= (self.settings.screen_height 
+                                               - bottom_padding): 
+                self._create_alien(current_x, current_y)
+                current_y += vertical_spacing  # Move down next alien.
+
+            # Move to the next column, adjusting for the width of the alien.
+            current_x += horizontal_spacing  # Move right calculated spacing
         
-        # If you reach the bottom of the screen, start new column from right.
-        if current_y > self.settings.screen_height:
-            current_y = alien_height  # Reset y to the top
-            current_x -= alien_width  # Move left for the next column.
+    def _create_alien(self, x_position, y_position):
+        """Create an alien and place it in the fleet."""
+        new_alien = Alien(self, self.fleet_direction)
+        new_alien.y = y_position
+        new_alien.rect.y = y_position 
+        new_alien.rect.x = x_position
+        self.aliens.add(new_alien)
+
+    def _update_aliens(self):
+        """Update the positions of all aliens in the fleet."""
+        self._check_fleet_edges()
+        self.aliens.update()  # Update the position of each alien.
+
+        # Move the fleet based on fleet direction.
+        for alien in self.aliens.sprites():
+            alien.rect.x += self.settings.alien_speed * self.fleet_direction
+
+            # Move aliens vertically if they hit the edge.
+            if self.fleet_direction == 1:  # Moving right.
+                if alien.rect.right >= self.settings.screen_width:
+                    self.fleet_direction = -1  # Move left.
+                    for alien in self.aliens.sprites():
+                        alien.rect.y += 10  # Move the entire fleet down.
+            elif self.fleet_direction == -1:  # Moving left.
+                if alien.rect.left <= 0:
+                    self.fleet_direction = 1  # Move right.
+                    for alien in self.aliens.sprites():
+                        alien.rect.y += 10  # Move the entire fleet down.
+    def _split_fleet(self):
+        """Split the alien fleet into two halves 
+        and make them move in opposite directions."""
+        # Check if the aliens are close enough to the ship
+        # (i.e., below the ship's position).
+        ship_rect = self.ship.rect
+        for alien in self.aliens.sprites():
+            if alien.rect.centery > ship_rect.centery + 140:  # Adjust value.
+                # Split the fleet into two parts: 
+                # left half goes toward the top,
+                # right half goes toward the bottom.
+                top_half = []
+                bottom_half = []
+
+                # Separate the aliens into top and bottom halves
+                #  based on their y-cordinate. 
+                for alien in self.aliens.sprites():
+                    if alien.rect.centerx < ship_rect.centery:
+                        top_half.append(alien)  # Aliens above the ship.
+                    else:
+                        bottom_half.append(alien)  # Aliens below the ship.
+
+                # Now, move each half in opposite directions.
+                for alien in top_half:
+                    alien.fleet_direction = 1  # Move the top half upwards 
+                                               #(negative y direction).
+                    alien.speed = self.settings.alien_speed  # Keep same speed.
+
+                for alien in bottom_half:
+                    alien.fleet_direction = -1  # Move the bottom half 
+                                            # downwards (positive y direction).
+                    alien.speed = self.settings.alien_speed  # Same speed.
+                break  # Exit loop when split condition is triggered.                       
+
+
+    def _check_fleet_edges(self):
+        """Respond if any alien hits the edge of the screen."""
+        for alien in self.aliens.sprites():
+            if (alien.rect.right >= self.settings.screen_width or
+                 alien.rect.left <= 0):
+                self._change_fleet_direction()
+                break  # No need to check other aliens once fleet hits the edge
+    
+    def _change_fleet_direction(self):
+        """Move the entire fleet down and change direction."""
+        for alien in self.aliens.sprites():
+            alien.rect.y += 1  # Move down(adjust value as needed).
+        self.fleet_direction *= -1  # Reverse direction.
 
     def _update_screen(self):
         """Update images on the screen, and flip to new screen."""
@@ -132,4 +221,6 @@ if __name__ == '__main__':
     # Make a game instance and run the game.
     ss = SideShooter()
     ss.run_game()
+
+
 
