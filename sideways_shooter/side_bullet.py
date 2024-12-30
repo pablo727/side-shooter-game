@@ -27,7 +27,7 @@ class Bullet(Sprite):
 
     def update(self):
         """Move the bullet from left to right side."""
-        # Update the exact position of the bullets.
+        # Update the exact position of the bullet.
         self.x += self.settings.bullet_speed
         self.rect.x = self.x
 
